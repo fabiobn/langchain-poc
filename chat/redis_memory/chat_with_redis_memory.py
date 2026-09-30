@@ -22,37 +22,43 @@ prompt = ChatPromptTemplate.from_messages([
 chain = prompt | llm
 
 # Conexão Direta com o Redis do Docker
-redis_client = redis.Redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
+redis_client = redis.Redis.from_url(
+    os.getenv("REDIS_URL", "redis://localhost:6379"),
+    decode_responses=True)
 SESSION_ID = "usuario_engenharia"
 REDIS_KEY = f"chat_history:{SESSION_ID}"
 
 
 def get_redis_history_raw(key: str) -> list:
-    """Busca o histórico bruto do Redis e converte para objetos LangChain."""
-    # Recupera a lista de strings (JSON) armazenadas no Redis
+    """Busca o histórico do Redis e converte explicitamente para a lista que o LangChain exige."""
     raw_messages = redis_client.lrange(key, 0, -1)
     langchain_messages = []
 
-    for msg_bytes in raw_messages:
-        msg_data = json.loads(msg_bytes.decode('utf-8'))
-        if msg_data["type"] == "human":
-            langchain_messages.append(HumanMessage(content=msg_data["content"]))
-        elif msg_data["type"] == "ai":
-            langchain_messages.append(AIMessage(content=msg_data["content"]))
+    print(f"--- [DEBUG REDIS] Mensagens cruas lidas da chave '{key}': {len(raw_messages)} ---")
+
+    for msg_str in raw_messages:
+        try:
+            msg_data = json.loads(msg_str)
+            if msg_data["type"] == "human":
+                langchain_messages.append(HumanMessage(content=msg_data["content"]))
+            elif msg_data["type"] == "ai":
+                langchain_messages.append(AIMessage(content=msg_data["content"]))
+        except Exception as e:
+            print(f"Erro ao decodificar mensagem do Redis: {e}")
 
     return langchain_messages
 
 
 def save_message_to_redis(key: str, role: str, content: str):
     """Salva uma nova mensagem no formato JSON dentro da lista do Redis."""
-    msg_json = json.dumps({"type": role, "content": content})
-    # Faz o append na lista do Redis e renova o TTL para 24 horas (86400 segundos)
+    msg_json = json.dumps({"type": role, "content": content}, ensure_ascii=False)
     redis_client.rpush(key, msg_json)
-    redis_client.expire(key, 86400)
+    redis_client.expire(key, 86400) # Mantém por 24h
 
 
 print("🤖 Chat Iniciado !")
 print("Digite 'sair' para encerrar.\n")
+
 
 while True:
     try:
@@ -65,7 +71,9 @@ while True:
             continue
 
         # Recupera o histórico atualizado do Docker Redis
-        current_history = get_redis_history_raw(SESSION_ID)
+        current_history = get_redis_history_raw(REDIS_KEY)
+
+        print(f"--- [DEBUG] Mensagens enviadas ao LangChain: {len(current_history)} ---")
 
         # Executa a cadeia passando o histórico atual e o novo input do usuário
         response = chain.invoke({
