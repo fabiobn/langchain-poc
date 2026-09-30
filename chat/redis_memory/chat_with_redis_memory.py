@@ -21,7 +21,7 @@ prompt = ChatPromptTemplate.from_messages([
 # Criação da chain
 chain = prompt | llm
 
-# Conexão Direta com o Redis do Docker
+# Conexão Direta com o Redis do Docker com decode para string
 redis_client = redis.Redis.from_url(
     os.getenv("REDIS_URL", "redis://localhost:6379"),
     decode_responses=True)
@@ -33,8 +33,6 @@ def get_redis_history_raw(key: str) -> list:
     """Busca o histórico do Redis e converte explicitamente para a lista que o LangChain exige."""
     raw_messages = redis_client.lrange(key, 0, -1)
     langchain_messages = []
-
-    print(f"--- [DEBUG REDIS] Mensagens cruas lidas da chave '{key}': {len(raw_messages)} ---")
 
     for msg_str in raw_messages:
         try:
@@ -72,8 +70,6 @@ while True:
 
         # Recupera o histórico atualizado do Docker Redis
         current_history = get_redis_history_raw(REDIS_KEY)
-
-        print(f"--- [DEBUG] Mensagens enviadas ao LangChain: {len(current_history)} ---")
 
         # Executa a cadeia passando o histórico atual e o novo input do usuário
         response = chain.invoke({
