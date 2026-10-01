@@ -28,9 +28,19 @@ redis_client = redis.Redis.from_url(
     decode_responses=True  # Garante o parse de strings direto (sem quebra de .decode)
 )
 
+# APLICANDO A JANELA DESLIZANTE
+# Ex: 6 mensagens = últimas 3 interações completas (User + AI)
+# LIMITE_JANELA_CONTEXTO = 6
+
+# APLICANDO A JANELA DESLIZANTE
+# def get_redis_history_sliding_window(key: str, limit: int) -> list:
 def get_redis_history_raw(key: str) -> list:
     """Busca a lista do Redis e monta os objetos nativos do LangChain."""
     raw_messages = redis_client.lrange(key, 0, -1)
+
+    # APLICANDO A JANELA DESLIZANTE: Pegamos apenas as últimas 'limit' strings
+    # if limit > 0:
+    #     raw_messages = raw_messages[-limit:]
 
     langchain_messages = []
     for msg_str in raw_messages:
@@ -82,6 +92,8 @@ while True:
 
         # Obter histórico relacionado ao usuário da sessão
         history_for_context = get_redis_history_raw(REDIS_KEY)
+        # APLICANDO A JANELA DESLIZANTE
+        #history_for_context = get_redis_history_sliding_window(REDIS_KEY, LIMITE_JANELA_CONTEXTO)
 
         # Execução do LLM usando .stream() para exibir a resposta palavra por palavra
         print("IA: ", end="")
