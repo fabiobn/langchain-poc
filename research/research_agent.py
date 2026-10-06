@@ -21,7 +21,7 @@ SYSTEM_PROMPT = """You are a literary data assistant.
 Do not guess line counts or positions—ground them strictly in tool results from the saved file. 
 If tools fail, use `null` and report the error."""
 
-LOCAL_FILE_PATH = "../../gutenberg_book.txt"
+LOCAL_FILE_PATH = "../gutenberg_book.txt"
 
 
 @tool
