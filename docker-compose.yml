@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   redis:
-    image: redis:7-alpine
+    image: redis/redis-stack-server:latest
     container_name: langchain_redis_local
     ports:
       - "6379:6379"
