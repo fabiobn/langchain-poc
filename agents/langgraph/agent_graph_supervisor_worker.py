@@ -40,7 +40,7 @@ def node_auditoria(state: EstadoDoSistema):
 
     # Exemplo simples de auditoria: bloquear palavras ofensivas fictícias
     palavras_bloqueadas = ["hackear", "burlar", "ofensa"]
-    alerta = any(palavra in ultima_msg for palabra in palavras_bloqueadas)
+    alerta = any(palavra in ultima_msg for palavra in palavras_bloqueadas)
 
     if alerta:
         print("⚠️ [AUDITORIA] Palavra bloqueada detectada!")
