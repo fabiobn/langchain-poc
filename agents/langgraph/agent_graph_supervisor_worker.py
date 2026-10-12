@@ -28,7 +28,7 @@ agente_matematico_base = create_agent(llm_agente, tools=tools_list)
 # Além das mensagens, controlamos variáveis de negócio (permissões e status)
 class EstadoDoSistema(TypedDict):
     messages: Annotated[list, add_messages]
-    status_atendimento: str  # Pode ser: "bot", "humano_pendente", "encerrado"
+    status_atendimento: Literal["bot", "humano_pendente", "encerrado"]
     alerta_seguranca: bool  # Flag de auditoria
 
 
